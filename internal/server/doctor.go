@@ -47,21 +47,9 @@ func init() {
 		{
 			Issue: Issue{
 				Level:       ERROR,
-				Summary:     "Negative Balance",
-				Description: "The running balance of an <b>asset</b> account is not supposed to go negative at any time. This issue typically happens due to incorrect transaction entries."},
-			Predicate: ruleAssetRegisterNonNegative},
-		{
-			Issue: Issue{
-				Level:       ERROR,
 				Summary:     "Credit Entry",
 				Description: "Income account should never have credit entry."},
 			Predicate: ruleNonCreditAccount},
-		{
-			Issue: Issue{
-				Level:       ERROR,
-				Summary:     "Debit Entry",
-				Description: "Expense Account should never have debit entry."},
-			Predicate: ruleNonDebitAccount},
 		{
 			Issue: Issue{
 				Level:       ERROR,
