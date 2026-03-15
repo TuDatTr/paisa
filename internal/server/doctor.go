@@ -7,14 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ananthakumaran/paisa/internal/accounting"
 	"github.com/ananthakumaran/paisa/internal/config"
 	"github.com/ananthakumaran/paisa/internal/model/posting"
 	"github.com/ananthakumaran/paisa/internal/query"
 	"github.com/ananthakumaran/paisa/internal/service"
 	"github.com/ananthakumaran/paisa/internal/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
@@ -82,37 +80,12 @@ func GetDiagnosis(db *gorm.DB) gin.H {
 	return gin.H{"issues": issues}
 }
 
-func ruleAssetRegisterNonNegative(db *gorm.DB) []error {
-	errs := make([]error, 0)
-	assets := query.Init(db).Like("Assets:%").All()
-	for account, ps := range lo.GroupBy(assets, func(posting posting.Posting) string { return posting.Account }) {
-		for _, balance := range accounting.Register(ps) {
-			if balance.Quantity.LessThan(decimal.NewFromFloat(0.01).Neg()) {
-				errs = append(errs, errors.New(fmt.Sprintf("<b>%s</b> account went negative (%.2f) on %s", account, balance.Quantity.InexactFloat64(), balance.Date.Format(DATE_FORMAT))))
-				break
-			}
-		}
-	}
-	return errs
-}
-
 func ruleNonCreditAccount(db *gorm.DB) []error {
 	errs := make([]error, 0)
 	incomes := query.Init(db).Like("Income:%").NotLike("Income:CapitalGains:%").All()
 	for _, p := range incomes {
 		if p.Amount.GreaterThan(decimal.NewFromFloat(0.01)) {
 			errs = append(errs, errors.New(fmt.Sprintf("<b>%.4f</b> got credited to <b>%s</b> on %s", p.Amount.InexactFloat64(), p.Account, p.Date.Format(DATE_FORMAT))))
-		}
-	}
-	return errs
-}
-
-func ruleNonDebitAccount(db *gorm.DB) []error {
-	errs := make([]error, 0)
-	incomes := query.Init(db).Like("Expenses:%").All()
-	for _, p := range incomes {
-		if p.Amount.LessThan(decimal.NewFromFloat(0.01).Neg()) {
-			errs = append(errs, errors.New(fmt.Sprintf("<b>%.4f</b> got debited from <b>%s</b> on %s", p.Amount.InexactFloat64(), p.Account, p.Date.Format(DATE_FORMAT))))
 		}
 	}
 	return errs
